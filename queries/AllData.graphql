@@ -1,0 +1,41 @@
+query AllData {
+  allCards(orderBy: uid_ASC) {
+    uid
+    rarity
+    number
+    set
+    title
+    subtitle
+    type
+    trait {
+      name
+    }
+    mp
+    effect {
+      symbol
+      text
+    }
+    stats {
+      type
+      rank
+    }
+    imageUrl
+    image {
+      original
+      large
+      medium
+      small
+      thumbnail
+    }
+    preview {
+      previewer
+      previewUrl
+      isActive
+      createdAt
+      updatedAt
+    }
+    createdAt
+    updatedAt
+  }
+}
+

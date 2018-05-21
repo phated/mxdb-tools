@@ -1,0 +1,35 @@
+mutation CreateCharacterCard(
+  $uid: String!
+  $rarity: CardRarity!
+  $number: Int!
+  $set: CardSet!
+  $title: String!
+  $subtitle: String!
+  $traitId: ID!
+  $mp: Int!
+  $symbol: CardSymbol!
+  $effect: String
+  $statsIds: [ID!]
+  $imageUrl: String!
+) {
+  createCard(
+    uid: $uid
+    rarity: $rarity
+    number: $number
+    set: $set
+    title: $title
+    subtitle: $subtitle
+    type: Character
+    traitId: $traitId
+    mp: $mp
+    effect: {
+      symbol: $symbol
+      text: $effect
+    }
+    statsIds: $statsIds
+    imageUrl: $imageUrl
+  ) {
+    id
+    title
+  }
+}

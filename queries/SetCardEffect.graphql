@@ -1,0 +1,5 @@
+mutation SetCardEffect($id: ID!, $symbol: CardSymbol!, $effect: String) {
+  updateCard(id: $id, effect: { symbol: $symbol, text: $effect }) {
+    uid
+  }
+}

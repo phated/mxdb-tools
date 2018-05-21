@@ -1,0 +1,38 @@
+mutation CreateBattleCardWithPreview(
+  $uid: String!
+  $rarity: CardRarity!
+  $number: Int!
+  $set: CardSet!
+  $title: String!
+  $mp: Int!
+  $symbol: CardSymbol!
+  $effect: String
+  $statsIds: [ID!]
+  $imageUrl: String!
+  $previewer: String!
+  $previewUrl: String!
+) {
+  createCard(
+    uid: $uid
+    rarity: $rarity
+    number: $number
+    set: $set
+    title: $title
+    type: Battle
+    mp: $mp
+    effect: {
+      symbol: $symbol
+      text: $effect
+    }
+    statsIds: $statsIds
+    imageUrl: $imageUrl
+    preview: {
+      previewer: $previewer
+      previewUrl: $previewUrl
+      isActive: true
+    }
+  ) {
+    id
+    title
+  }
+}

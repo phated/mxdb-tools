@@ -7,8 +7,12 @@ mutation CreateBattleCardWithPreview(
   $mp: Int!
   $symbol: CardSymbol!
   $effect: String
-  $statsIds: [ID!]
-  $imageUrl: String!
+  $statsIds: [ID!]!
+  $originalImage: String!
+  $largeImage: String!
+  $mediumImage: String!
+  $smallImage: String!
+  $thumbnailImage: String!
   $previewer: String!
   $previewUrl: String!
 ) {
@@ -25,7 +29,14 @@ mutation CreateBattleCardWithPreview(
       text: $effect
     }
     statsIds: $statsIds
-    imageUrl: $imageUrl
+    imageUrl: $largeImage
+    image: {
+      original: $originalImage
+      large: $largeImage
+      medium: $mediumImage
+      small: $smallImage
+      thumbnail: $thumbnailImage
+    }
     preview: {
       previewer: $previewer
       previewUrl: $previewUrl

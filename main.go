@@ -79,6 +79,7 @@ func (m *GraphqlMutations) Prepare() error {
 }
 
 var token string
+var dropboxDir string
 var dirs ImageDirectories
 var mutations GraphqlMutations
 var strengthIDs map[int]string
@@ -88,6 +89,7 @@ var traitIDs map[string]string
 
 func init() {
 	flag.StringVar(&token, "token", "", "Pass the token for the graphql API")
+	flag.StringVar(&dropboxDir, "dropbox", "", "Dropbox directory where large images are copied")
 
 	cwd, cwdErr := os.Getwd()
 	if cwdErr != nil {
@@ -446,6 +448,15 @@ func createOriginalImage(card *Card) error {
 		return copyErr
 	}
 
+	// TODO: This should probably check color profile instead of Card's Set
+	// TODO: Would be nice to make this cross platform
+	if card.Set == "JL" {
+		sips := exec.Command("sips", "--matchTo", "/System/Library/ColorSync/Profiles/Generic RGB Profile.icc", path)
+		if err := sips.Run(); err != nil {
+			log.Println("Unable to color correct:", path, "- Proceeding...")
+		}
+	}
+
 	return nil
 }
 
@@ -458,12 +469,6 @@ func createLargeImage(card *Card) error {
 		return nil
 	}
 
-	// TODO: This is probably better done after we fetch
-	sips := exec.Command("sips", "--matchTo", "/System/Library/ColorSync/Profiles/Generic RGB Profile.icc", ogPath)
-	if err := sips.Run(); err != nil {
-		log.Println("Unable to color correct:", ogPath, "- Proceeding...")
-	}
-
 	ogImg, ogImgErr := imaging.Open(ogPath)
 	if ogImgErr != nil {
 		return ogImgErr
@@ -474,6 +479,13 @@ func createLargeImage(card *Card) error {
 	width := 680 + (border * 2)
 	croppedImage := imaging.CropCenter(ogImg, width, height)
 	resizedImg := imaging.Resize(croppedImage, 0, 1000, imaging.Box)
+
+	if dropboxDir != "" && card.PreviewActive == true {
+		dropboxPath := filepath.Join(dropboxDir, card.Filename())
+		if err := imaging.Save(resizedImg, dropboxPath); err != nil {
+			log.Println("Failed to write card to", dropboxPath)
+		}
+	}
 
 	return imaging.Save(resizedImg, largePath)
 }

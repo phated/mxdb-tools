@@ -8,19 +8,23 @@ query AllData {
     subtitle
     type
     trait {
+      id
       name
     }
     mp
     effect {
+      id
       symbol
       text
     }
     stats {
+      id
       type
       rank
     }
     imageUrl
     image {
+      id
       original
       large
       medium
@@ -28,11 +32,10 @@ query AllData {
       thumbnail
     }
     preview {
+      id
       previewer
       previewUrl
       isActive
-      createdAt
-      updatedAt
     }
     createdAt
     updatedAt

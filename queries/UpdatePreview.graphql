@@ -1,0 +1,15 @@
+mutation UpdatePreview(
+  $id: ID!
+  $previewer: String!
+  $previewUrl: String!
+  $isActive: Boolean!
+) {
+  updatePreview(
+    id: $id
+    previewer: $previewer
+    previewUrl: $previewUrl
+    isActive: $isActive
+  ) {
+    id
+  }
+}

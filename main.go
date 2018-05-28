@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"flag"
 	"io"
 	"io/ioutil"
 	"log"
@@ -18,8 +19,8 @@ import (
 )
 
 const (
-	csvUrl     = "https://docs.google.com/spreadsheets/d/1w2TuX7u_wdxFXnUWb_KyRS6o_8vxAEjZV5u5BpkOuI0/export?exportFormat=csv"
-	graphqlUrl = "https://api.graph.cool/simple/v1/metaxdb"
+	csvURL     = "https://docs.google.com/spreadsheets/d/1w2TuX7u_wdxFXnUWb_KyRS6o_8vxAEjZV5u5BpkOuI0/export?exportFormat=csv"
+	graphqlURL = "https://api.graph.cool/simple/v1/metaxdb"
 )
 
 type ImageDirectories struct {
@@ -51,9 +52,43 @@ func (dirs ImageDirectories) Create() error {
 	return nil
 }
 
+type GraphqlMutations struct {
+	CreateCharacterCardWithPreview []byte
+	CreateEventCardWithPreview     []byte
+	CreateBattleCardWithPreview    []byte
+}
+
+func (m *GraphqlMutations) Prepare() error {
+	if query, err := ioutil.ReadFile("queries/CreateCharacterCardWithPreview.graphql"); err != nil {
+		return err
+	} else {
+		m.CreateCharacterCardWithPreview = query
+	}
+	if query, err := ioutil.ReadFile("queries/CreateEventCardWithPreview.graphql"); err != nil {
+		return err
+	} else {
+		m.CreateEventCardWithPreview = query
+	}
+	if query, err := ioutil.ReadFile("queries/CreateBattleCardWithPreview.graphql"); err != nil {
+		return err
+	} else {
+		m.CreateBattleCardWithPreview = query
+	}
+
+	return nil
+}
+
+var token string
 var dirs ImageDirectories
+var mutations GraphqlMutations
+var strengthIDs map[int]string
+var intelligenceIDs map[int]string
+var specialIDs map[int]string
+var traitIDs map[string]string
 
 func init() {
+	flag.StringVar(&token, "token", "", "Pass the token for the graphql API")
+
 	cwd, cwdErr := os.Getwd()
 	if cwdErr != nil {
 		log.Fatal(cwdErr)
@@ -70,73 +105,202 @@ func init() {
 	if err := dirs.Create(); err != nil {
 		log.Fatal(err)
 	}
+
+	mutations = GraphqlMutations{}
+	if err := mutations.Prepare(); err != nil {
+		log.Fatal(err)
+	}
+
+	strengthIDs = make(map[int]string)
+	strengthIDs[1] = "cjersov3s14fu01832cku6ivc"
+	strengthIDs[2] = "cjertinv814oj0183jx107b9u"
+	strengthIDs[3] = "cjertith714om0183tr2huxiw"
+	strengthIDs[4] = "cjertj05014or0183we74xnsb"
+	strengthIDs[5] = "cjertj34914ov0183sl7kmqm1"
+	strengthIDs[6] = "cjertj5ol14p10183cmzat5y9"
+	strengthIDs[7] = "cjertj8a814p60183av1hlcty"
+	strengthIDs[8] = "cjertjbqr14pc0183uo7656p7"
+	strengthIDs[9] = "cjertjebc14ph0183025ls377"
+
+	intelligenceIDs = make(map[int]string)
+	intelligenceIDs[1] = "cjertjj9i14pm01835g18maaz"
+	intelligenceIDs[2] = "cjertjmjt14pq01838b9o4h92"
+	intelligenceIDs[3] = "cjertjpvq14px0183ff0j6i8o"
+	intelligenceIDs[4] = "cjertjspz14q00183gypv8iaa"
+	intelligenceIDs[5] = "cjertjy5i14q70183vq4en94t"
+	intelligenceIDs[6] = "cjertk2k914qa0183zxqjv2q3"
+	intelligenceIDs[7] = "cjertk64814qe0183s8gtzive"
+	intelligenceIDs[8] = "cjertkf4i14qj0183iafpggqn"
+	intelligenceIDs[9] = "cjertkih114qm01833ztywguw"
+
+	specialIDs = make(map[int]string)
+	specialIDs[1] = "cjertkmfs14qr0183zvz5p90r"
+	specialIDs[2] = "cjertkqcd14qv01833umx8bs6"
+	specialIDs[3] = "cjertkthm14r10183p8ymqv7a"
+	specialIDs[4] = "cjertkxl714r401837ddh78bw"
+	specialIDs[5] = "cjertl0i914r80183y161rfvw"
+	specialIDs[6] = "cjertl3mj14rc018322rxbnb3"
+	specialIDs[7] = "cjertl7pv14rg01835d77dxcm"
+	specialIDs[8] = "cjertlb0h14rj0183wfrkgp4x"
+	specialIDs[9] = "cjertleik14rm01837rde1qzn"
+
+	traitIDs = make(map[string]string)
+	traitIDs["Hero"] = "cjes4rlte16z90183tpe0zwp8"
+	traitIDs["Villain"] = "cjes4ro4e16zc0183wukhv8yy"
+	traitIDs["Blue Lantern"] = "cjes4rtu116zg0183b2u6zvqh"
+	traitIDs["Green Lantern"] = "cjes4s2gj16zk0183uon6d2qy"
+	traitIDs["Indigo Tribe"] = "cjes4s9rt16zo0183dblaykto"
+	traitIDs["Orange Lantern"] = "cjes4sgpd16zs0183ri5sae4f"
+	traitIDs["Red Lantern"] = "cjes4smq216zw01834711alj5"
+	traitIDs["Sinestro Corps"] = "cjes4ssvn17000183imycm8h7"
+	traitIDs["Star Sapphire"] = "cjes4sz0t17030183x780qp5t"
+	traitIDs["White Lantern"] = "cjes4t5r617070183n5f60a53"
+	traitIDs["Black Lantern"] = "cjes4tna6170b0183yxydoxc8"
+	traitIDs["Scout Regiment"] = "cjes4ufa5170g0183ne60w0n5"
+	traitIDs["Garrison Regiment"] = "cjes4ulp5170k0183wz5ewix6"
+	traitIDs["Military Police Regiment"] = "cjes4ushb170o0183gqvjd1pr"
+	traitIDs["Titan"] = "cjes4v11x170t0183yn2ripoe"
+	traitIDs["Cadet Corps"] = "cjes4vgkg170x0183kj04xyew"
+	traitIDs["Human"] = "cjf8iuklm49ie0183uw7s0iq4"
+	traitIDs["Bat Family"] = "cjhpvakkz3z8w0177mo71ce5w"
+	traitIDs["Arkham Inmate"] = "cjhqssk8i46fi01770g3v6q2g"
 }
 
 type Card struct {
-	UID               string `csv:"uid"`
-	Rarity            string `csv:"rarity"`
-	Number            int    `csv:"number"`
-	Set               string `csv:"set"`
-	Title             string `csv:"title"`
-	Subtitle          string `csv:"subtitle"`
-	Type              string `csv:"type"`
-	Trait             string `csv:"trait"`
-	MP                int    `csv:"mp"`
-	Symbol            string `csv:"symbol"`
-	Effect            string `csv:"effect"`
-	Strength          int    `csv:"strength"`     // TODO: This are being defaulted as 0
-	Intelligence      int    `csv:"intelligence"` // TODO: This are being defaulted as 0
-	Special           int    `csv:"special"`      // TODO: This are being defaulted as 0
-	PreviewURL        string `csv:"preview_url"`
-	Previewer         string `csv:"previewer"`
-	OriginalImageURL  string `csv:"original_image_url"`
-	LargeImageURL     string `csv:"large_image_url"`
-	SmallImageURL     string `csv:"small_image_url"`
-	MediumImageURL    string `csv:"medium_image_url"`
-	ThumbnailImageURL string `csv:"thumbnail_image_url"`
+	UID               string `csv:"uid" json:"uid"`
+	Rarity            string `csv:"rarity" json:"rarity"`
+	Number            int    `csv:"number" json:"number"`
+	Set               string `csv:"set" json:"set"`
+	Title             string `csv:"title" json:"title"`
+	Subtitle          string `csv:"subtitle" json:"subtitle,omitempty"`
+	Type              string `csv:"type" json:"-"`
+	Trait             string `csv:"trait" json:"-"`
+	MP                int    `csv:"mp" json:"mp"`
+	Symbol            string `csv:"symbol" json:"symbol"`
+	Effect            string `csv:"effect" json:"effect,omitempty"`
+	Strength          int    `csv:"strength" json:"-"`     // TODO: This are being defaulted as 0
+	Intelligence      int    `csv:"intelligence" json:"-"` // TODO: This are being defaulted as 0
+	Special           int    `csv:"special" json:"-"`      // TODO: This are being defaulted as 0
+	PreviewURL        string `csv:"preview_url" json:"previewUrl,omitempty"`
+	Previewer         string `csv:"previewer" json:"previewer,omitempty"`
+	PreviewActive     bool   `csv:"preview_active" json:"-"` // TODO: Should we add this to json?
+	OriginalImageURL  string `csv:"original_image_url" json:"originalImage"`
+	LargeImageURL     string `csv:"large_image_url" json:"largeImage"`
+	MediumImageURL    string `csv:"medium_image_url" json:"mediumImage"`
+	SmallImageURL     string `csv:"small_image_url" json:"smallImage"`
+	ThumbnailImageURL string `csv:"thumbnail_image_url" json:"thumbnailImage"`
 }
 
-func (card Card) Filename() string {
+func (card *Card) Filename() string {
 	return card.UID + ".jpg"
 }
 
+func (card *Card) MarshalJSON() ([]byte, error) {
+	type Alias Card
+	type CardWithStatIDs struct {
+		*Alias
+		StatIDs []string `json:"statsIds,omitempty"`
+		TraitID string   `json:"traitId,omitempty"`
+	}
+
+	var statIDs []string
+	if id := strengthIDs[card.Strength]; id != "" {
+		statIDs = append(statIDs, id)
+	}
+	if id := intelligenceIDs[card.Intelligence]; id != "" {
+		statIDs = append(statIDs, id)
+	}
+	if id := specialIDs[card.Special]; id != "" {
+		statIDs = append(statIDs, id)
+	}
+
+	var traitID string
+	if id := traitIDs[card.Trait]; id != "" {
+		traitID = id
+	}
+
+	cardWithStatIDs := CardWithStatIDs{
+		Alias:   (*Alias)(card),
+		StatIDs: statIDs,
+		TraitID: traitID,
+	}
+
+	return json.Marshal(cardWithStatIDs)
+}
+
 func loadCSV() ([]*Card, error) {
-	resp, err := http.Get(csvUrl)
+	resp, err := http.Get(csvURL)
 	if err != nil {
-		// log.Println(err)
 		return nil, err
 	}
 
 	cards := []*Card{}
 	if err := gocsv.Unmarshal(resp.Body, &cards); err != nil {
-		// log.Println(err)
 		return nil, err
 	}
 
 	return cards, nil
 }
 
-func queryToRequest(queryString []byte) []byte {
+func graphqlRequest(query []byte, variables interface{}) ([]byte, error) {
+	str, err := queryToRequest(query, variables)
+	if err != nil {
+		return nil, err
+	}
+	log.Printf("%s", str)
+	body := bytes.NewBuffer(str)
+
+	req, err := http.NewRequest("POST", graphqlURL, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
+func queryToRequest(queryString []byte, variables interface{}) ([]byte, error) {
+	type payload struct {
+		Query     string      `json:"query"`
+		Variables interface{} `json:"variables,omitempty"`
+	}
+
 	replacer := strings.NewReplacer("\n", "")
 	compactQuery := replacer.Replace(string(queryString))
-	return []byte(`{"query":"` + compactQuery + `"}`)
+
+	return json.Marshal(payload{
+		Query:     compactQuery,
+		Variables: variables,
+	})
 }
 
 type GraphqlTrait struct {
+	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
 type GraphqlEffect struct {
+	ID     string `json:"id"`
 	Symbol string `json:"symbol"`
 	Text   string `json:"text"`
 }
 
 type GraphqlStats struct {
+	ID   string `json:"id"`
 	Type string `json:"type"`
 	Rank int    `json:"rank"`
 }
 
 type GraphqlImage struct {
+	ID        string `json:"id"`
 	Original  string `json:"original"`
 	Large     string `json:"large"`
 	Medium    string `json:"medium"`
@@ -145,14 +309,29 @@ type GraphqlImage struct {
 }
 
 type GraphqlPreview struct {
-	Previewer  string `json:"previewer"`
-	PreviewURL string `json:"previewUrl"`
-	IsActive   bool   `json:"isActive"`
-	CreatedAt  string `json:"createdAt"`
-	UpdatedAt  string `json:"updatedAt"`
+	ID         string `json:"id,omitempty"`
+	Previewer  string `json:"previewer,omitempty"`
+	PreviewURL string `json:"previewUrl,omitempty"`
+	IsActive   bool   `json:"isActive,omitempty"`
+}
+
+func (preview *GraphqlPreview) IsEqual(card *Card) bool {
+	return (preview.Previewer == card.Previewer &&
+		preview.PreviewURL == card.PreviewURL &&
+		preview.IsActive == card.PreviewActive)
+}
+
+func (preview *GraphqlPreview) Update() ([]byte, error) {
+	query, err := ioutil.ReadFile("queries/UpdatePreview.graphql")
+	if err != nil {
+		return nil, err
+	}
+
+	return graphqlRequest(query, preview)
 }
 
 type GraphqlCard struct {
+	ID        string         `json:"id"`
 	UID       string         `json:"uid"`
 	Rarity    string         `json:"rarity"`
 	Number    int            `json:"number"`
@@ -171,7 +350,7 @@ type GraphqlCard struct {
 	UpdatedAt string         `json:"updatedAt"`
 }
 
-func (gqlCard *GraphqlCard) toCard() Card {
+func (gqlCard *GraphqlCard) toCard() *Card {
 	card := Card{
 		UID:        gqlCard.UID,
 		Rarity:     gqlCard.Rarity,
@@ -199,7 +378,7 @@ func (gqlCard *GraphqlCard) toCard() Card {
 		}
 	}
 
-	return card
+	return &card
 }
 
 func loadGraphQL() ([]*GraphqlCard, error) {
@@ -217,15 +396,7 @@ func loadGraphQL() ([]*GraphqlCard, error) {
 		return nil, err
 	}
 
-	str := queryToRequest(queryStr)
-	body := bytes.NewBuffer(str)
-
-	resp, err := http.Post(graphqlUrl, "application/json", body)
-	if err != nil {
-		return nil, err
-	}
-
-	respBody, readErr := ioutil.ReadAll(resp.Body)
+	respBody, readErr := graphqlRequest(queryStr, nil)
 	if readErr != nil {
 		return nil, readErr
 	}
@@ -365,8 +536,14 @@ func createThumbnailImage(card *Card) error {
 }
 
 func main() {
+	flag.Parse()
+
+	if token == "" {
+		log.Println("Token required. Use --token")
+		return
+	}
+
 	cards, err := loadCSV()
-	// cards, err := loadGraphQL()
 	if err != nil {
 		log.Println(err)
 		return
@@ -394,9 +571,57 @@ func main() {
 			log.Println(err)
 			continue
 		}
+	}
 
-		// log.Println(originalImageFilepath, "does not exist")
-		// TODO: Match CSV and Graphql UIDs and deep equal compare?
-		// log.Println(card.toCard())
+	gqlCards, err := loadGraphQL()
+	// TODO: Should this be the output of loadGraphQL?
+	currentCards := make(map[string]*GraphqlCard)
+	for _, gqlCard := range gqlCards {
+		currentCards[gqlCard.UID] = gqlCard
+	}
+
+	var createCards []*Card
+	for _, card := range cards {
+		currentCard := currentCards[card.UID]
+
+		if currentCard == nil {
+			createCards = append(createCards, card)
+			continue
+		}
+
+		if currentCard.Preview.IsEqual(card) == false {
+			currentCard.Preview.Previewer = card.Previewer
+			currentCard.Preview.PreviewURL = card.PreviewURL
+			currentCard.Preview.IsActive = card.PreviewActive
+			resp, err := currentCard.Preview.Update()
+			if err != nil {
+				log.Println(err)
+			} else {
+				log.Printf("Preivew updated: %s", resp)
+			}
+		}
+	}
+
+	// TODO: Non-Preview creation
+	for _, card := range createCards {
+		var query []byte
+		if card.Type == "Character" {
+			query = mutations.CreateCharacterCardWithPreview
+		}
+
+		if card.Type == "Event" {
+			query = mutations.CreateEventCardWithPreview
+		}
+
+		if card.Type == "Battle" {
+			query = mutations.CreateBattleCardWithPreview
+		}
+
+		respBody, err := graphqlRequest(query, card)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		log.Printf("%s", respBody)
 	}
 }

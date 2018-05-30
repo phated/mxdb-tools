@@ -59,17 +59,17 @@ type GraphqlMutations struct {
 }
 
 func (m *GraphqlMutations) Prepare() error {
-	if query, err := ioutil.ReadFile("queries/CreateCharacterCardWithPreview.graphql"); err != nil {
+	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateCharacterCardWithPreview.graphql")); err != nil {
 		return err
 	} else {
 		m.CreateCharacterCardWithPreview = query
 	}
-	if query, err := ioutil.ReadFile("queries/CreateEventCardWithPreview.graphql"); err != nil {
+	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateEventCardWithPreview.graphql")); err != nil {
 		return err
 	} else {
 		m.CreateEventCardWithPreview = query
 	}
-	if query, err := ioutil.ReadFile("queries/CreateBattleCardWithPreview.graphql"); err != nil {
+	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateBattleCardWithPreview.graphql")); err != nil {
 		return err
 	} else {
 		m.CreateBattleCardWithPreview = query
@@ -78,6 +78,7 @@ func (m *GraphqlMutations) Prepare() error {
 	return nil
 }
 
+var execDir string
 var token string
 var dropboxDir string
 var dirs ImageDirectories
@@ -88,6 +89,13 @@ var specialIDs map[int]string
 var traitIDs map[string]string
 
 func init() {
+	// if ex, err := os.Executable(); err != nil {
+	// 	log.Fatal(err)
+	// } else {
+	// 	execDir = filepath.Dir(ex)
+	// }
+	execDir = "/Users/phated/go/src/mxdb-tools"
+
 	flag.StringVar(&token, "token", "", "Pass the token for the graphql API")
 	flag.StringVar(&dropboxDir, "dropbox", "", "Dropbox directory where large images are copied")
 
@@ -324,7 +332,7 @@ func (preview *GraphqlPreview) IsEqual(card *Card) bool {
 }
 
 func (preview *GraphqlPreview) Update() ([]byte, error) {
-	query, err := ioutil.ReadFile("queries/UpdatePreview.graphql")
+	query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/UpdatePreview.graphql"))
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +400,7 @@ func loadGraphQL() ([]*GraphqlCard, error) {
 		Cards AllCards `json:"data"`
 	}
 
-	queryStr, err := ioutil.ReadFile("queries/AllData.graphql")
+	queryStr, err := ioutil.ReadFile(filepath.Join(execDir, "queries/AllData.graphql"))
 
 	if err != nil {
 		return nil, err
@@ -586,6 +594,10 @@ func main() {
 	}
 
 	gqlCards, err := loadGraphQL()
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	// TODO: Should this be the output of loadGraphQL?
 	currentCards := make(map[string]*GraphqlCard)
 	for _, gqlCard := range gqlCards {
@@ -602,6 +614,7 @@ func main() {
 		}
 
 		if currentCard.Preview.IsEqual(card) == false {
+			log.Panicln("update preview?")
 			currentCard.Preview.Previewer = card.Previewer
 			currentCard.Preview.PreviewURL = card.PreviewURL
 			currentCard.Preview.IsActive = card.PreviewActive

@@ -1,0 +1,20 @@
+query StatRanks {
+  strength: allStats(filter: {
+    type: Strength
+  }) {
+    id
+    rank
+  }
+  intelligence: allStats(filter: {
+    type: Intelligence
+  }) {
+    id
+    rank
+  }
+  special: allStats(filter: {
+    type: Special
+  }) {
+    id
+    rank
+  }
+}

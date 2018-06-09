@@ -1,0 +1,6 @@
+query AllTraits {
+  allTraits {
+    id
+    name
+  }
+}

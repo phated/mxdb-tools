@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/disintegration/imaging"
+	"github.com/gobuffalo/packr"
 	"github.com/gocarina/gocsv"
 )
 
@@ -22,6 +23,8 @@ const (
 	csvURL     = "https://docs.google.com/spreadsheets/d/1w2TuX7u_wdxFXnUWb_KyRS6o_8vxAEjZV5u5BpkOuI0/export?exportFormat=csv"
 	graphqlURL = "https://api.graph.cool/simple/v1/metaxdb"
 )
+
+var queries packr.Box
 
 type ImageDirectories struct {
 	Base      string
@@ -59,17 +62,17 @@ type GraphqlMutations struct {
 }
 
 func (m *GraphqlMutations) Prepare() error {
-	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateCharacterCardWithPreview.graphql")); err != nil {
+	if query, err := queries.MustBytes("CreateCharacterCardWithPreview.graphql"); err != nil {
 		return err
 	} else {
 		m.CreateCharacterCardWithPreview = query
 	}
-	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateEventCardWithPreview.graphql")); err != nil {
+	if query, err := queries.MustBytes("CreateEventCardWithPreview.graphql"); err != nil {
 		return err
 	} else {
 		m.CreateEventCardWithPreview = query
 	}
-	if query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/CreateBattleCardWithPreview.graphql")); err != nil {
+	if query, err := queries.MustBytes("CreateBattleCardWithPreview.graphql"); err != nil {
 		return err
 	} else {
 		m.CreateBattleCardWithPreview = query
@@ -78,7 +81,6 @@ func (m *GraphqlMutations) Prepare() error {
 	return nil
 }
 
-var execDir string
 var token string
 var dropboxDir string
 var dirs ImageDirectories
@@ -89,12 +91,7 @@ var specialIDs map[int]string
 var traitIDs map[string]string
 
 func init() {
-	// if ex, err := os.Executable(); err != nil {
-	// 	log.Fatal(err)
-	// } else {
-	// 	execDir = filepath.Dir(ex)
-	// }
-	execDir = "/Users/phated/go/src/mxdb-tools"
+	queries = packr.NewBox("queries/")
 
 	flag.StringVar(&token, "token", "", "Pass the token for the graphql API")
 	flag.StringVar(&dropboxDir, "dropbox", "", "Dropbox directory where large images are copied")
@@ -122,58 +119,32 @@ func init() {
 	}
 
 	strengthIDs = make(map[int]string)
-	strengthIDs[1] = "cjersov3s14fu01832cku6ivc"
-	strengthIDs[2] = "cjertinv814oj0183jx107b9u"
-	strengthIDs[3] = "cjertith714om0183tr2huxiw"
-	strengthIDs[4] = "cjertj05014or0183we74xnsb"
-	strengthIDs[5] = "cjertj34914ov0183sl7kmqm1"
-	strengthIDs[6] = "cjertj5ol14p10183cmzat5y9"
-	strengthIDs[7] = "cjertj8a814p60183av1hlcty"
-	strengthIDs[8] = "cjertjbqr14pc0183uo7656p7"
-	strengthIDs[9] = "cjertjebc14ph0183025ls377"
-
 	intelligenceIDs = make(map[int]string)
-	intelligenceIDs[1] = "cjertjj9i14pm01835g18maaz"
-	intelligenceIDs[2] = "cjertjmjt14pq01838b9o4h92"
-	intelligenceIDs[3] = "cjertjpvq14px0183ff0j6i8o"
-	intelligenceIDs[4] = "cjertjspz14q00183gypv8iaa"
-	intelligenceIDs[5] = "cjertjy5i14q70183vq4en94t"
-	intelligenceIDs[6] = "cjertk2k914qa0183zxqjv2q3"
-	intelligenceIDs[7] = "cjertk64814qe0183s8gtzive"
-	intelligenceIDs[8] = "cjertkf4i14qj0183iafpggqn"
-	intelligenceIDs[9] = "cjertkih114qm01833ztywguw"
-
 	specialIDs = make(map[int]string)
-	specialIDs[1] = "cjertkmfs14qr0183zvz5p90r"
-	specialIDs[2] = "cjertkqcd14qv01833umx8bs6"
-	specialIDs[3] = "cjertkthm14r10183p8ymqv7a"
-	specialIDs[4] = "cjertkxl714r401837ddh78bw"
-	specialIDs[5] = "cjertl0i914r80183y161rfvw"
-	specialIDs[6] = "cjertl3mj14rc018322rxbnb3"
-	specialIDs[7] = "cjertl7pv14rg01835d77dxcm"
-	specialIDs[8] = "cjertlb0h14rj0183wfrkgp4x"
-	specialIDs[9] = "cjertleik14rm01837rde1qzn"
+	statRanks, err := loadStatRanks()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, stat := range statRanks.Strength {
+		strengthIDs[stat.Rank] = stat.ID
+	}
+	for _, stat := range statRanks.Intelligence {
+		intelligenceIDs[stat.Rank] = stat.ID
+	}
+	for _, stat := range statRanks.Special {
+		specialIDs[stat.Rank] = stat.ID
+	}
 
 	traitIDs = make(map[string]string)
-	traitIDs["Hero"] = "cjes4rlte16z90183tpe0zwp8"
-	traitIDs["Villain"] = "cjes4ro4e16zc0183wukhv8yy"
-	traitIDs["Blue Lantern"] = "cjes4rtu116zg0183b2u6zvqh"
-	traitIDs["Green Lantern"] = "cjes4s2gj16zk0183uon6d2qy"
-	traitIDs["Indigo Tribe"] = "cjes4s9rt16zo0183dblaykto"
-	traitIDs["Orange Lantern"] = "cjes4sgpd16zs0183ri5sae4f"
-	traitIDs["Red Lantern"] = "cjes4smq216zw01834711alj5"
-	traitIDs["Sinestro Corps"] = "cjes4ssvn17000183imycm8h7"
-	traitIDs["Star Sapphire"] = "cjes4sz0t17030183x780qp5t"
-	traitIDs["White Lantern"] = "cjes4t5r617070183n5f60a53"
-	traitIDs["Black Lantern"] = "cjes4tna6170b0183yxydoxc8"
-	traitIDs["Scout Regiment"] = "cjes4ufa5170g0183ne60w0n5"
-	traitIDs["Garrison Regiment"] = "cjes4ulp5170k0183wz5ewix6"
-	traitIDs["Military Police Regiment"] = "cjes4ushb170o0183gqvjd1pr"
-	traitIDs["Titan"] = "cjes4v11x170t0183yn2ripoe"
-	traitIDs["Cadet Corps"] = "cjes4vgkg170x0183kj04xyew"
-	traitIDs["Human"] = "cjf8iuklm49ie0183uw7s0iq4"
-	traitIDs["Bat Family"] = "cjhpvakkz3z8w0177mo71ce5w"
-	traitIDs["Arkham Inmate"] = "cjhqssk8i46fi01770g3v6q2g"
+	traits, err := loadTraits()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, trait := range traits {
+		traitIDs[trait.Name] = trait.ID
+	}
 }
 
 type Card struct {
@@ -253,11 +224,19 @@ func loadCSV() ([]*Card, error) {
 }
 
 func graphqlRequest(query []byte, variables interface{}) ([]byte, error) {
+	type GraphqlError struct {
+		Message string `json:"message"`
+	}
+
+	type GraphQlResponse struct {
+		Data   json.RawMessage `json:"data"`
+		Errors []*GraphqlError `json:"errors"`
+	}
+
 	str, err := queryToRequest(query, variables)
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("%s", str)
 	body := bytes.NewBuffer(str)
 
 	req, err := http.NewRequest("POST", graphqlURL, body)
@@ -274,7 +253,21 @@ func graphqlRequest(query []byte, variables interface{}) ([]byte, error) {
 
 	defer resp.Body.Close()
 
-	return ioutil.ReadAll(resp.Body)
+	respBody, bodyErr := ioutil.ReadAll(resp.Body)
+	if bodyErr != nil {
+		return nil, bodyErr
+	}
+
+	jsonResp := GraphQlResponse{}
+	if err := json.Unmarshal(respBody, &jsonResp); err != nil {
+		return nil, err
+	}
+
+	if len(jsonResp.Errors) != 0 {
+		return nil, errors.New(jsonResp.Errors[0].Message)
+	}
+
+	return jsonResp.Data, nil
 }
 
 func queryToRequest(queryString []byte, variables interface{}) ([]byte, error) {
@@ -332,7 +325,7 @@ func (preview *GraphqlPreview) IsEqual(card *Card) bool {
 }
 
 func (preview *GraphqlPreview) Update() ([]byte, error) {
-	query, err := ioutil.ReadFile(filepath.Join(execDir, "queries/UpdatePreview.graphql"))
+	query, err := queries.MustBytes("UpdatePreview.graphql")
 	if err != nil {
 		return nil, err
 	}
@@ -396,27 +389,81 @@ func loadGraphQL() ([]*GraphqlCard, error) {
 		AllCards []*GraphqlCard `json:"allCards"`
 	}
 
-	type GraphQlResponse struct {
-		Cards AllCards `json:"data"`
-	}
-
-	queryStr, err := ioutil.ReadFile(filepath.Join(execDir, "queries/AllData.graphql"))
+	query, err := queries.MustBytes("AllData.graphql")
 
 	if err != nil {
 		return nil, err
 	}
 
-	respBody, readErr := graphqlRequest(queryStr, nil)
+	respBody, readErr := graphqlRequest(query, nil)
 	if readErr != nil {
 		return nil, readErr
 	}
 
-	jsonResp := GraphQlResponse{}
+	jsonResp := AllCards{}
 	if err := json.Unmarshal(respBody, &jsonResp); err != nil {
 		return nil, err
 	}
 
-	return jsonResp.Cards.AllCards, nil
+	return jsonResp.AllCards, nil
+}
+
+type Trait struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func loadTraits() ([]*Trait, error) {
+	type AllTraits struct {
+		AllTraits []*Trait `json:"allTraits"`
+	}
+
+	query, err := queries.MustBytes("AllTraits.graphql")
+	if err != nil {
+		return nil, err
+	}
+
+	respBody, readErr := graphqlRequest(query, nil)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	jsonResp := AllTraits{}
+	if err := json.Unmarshal(respBody, &jsonResp); err != nil {
+		return nil, err
+	}
+
+	return jsonResp.AllTraits, nil
+}
+
+type StatRank struct {
+	ID   string `json:"id"`
+	Rank int    `json:"rank"`
+}
+
+type GroupedStatRanks struct {
+	Strength     []*StatRank `json:"strength"`
+	Intelligence []*StatRank `json:"intelligence"`
+	Special      []*StatRank `json:"special"`
+}
+
+func loadStatRanks() (*GroupedStatRanks, error) {
+	query, err := queries.MustBytes("StatRanks.graphql")
+	if err != nil {
+		return nil, err
+	}
+
+	respBody, readErr := graphqlRequest(query, nil)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	jsonResp := GroupedStatRanks{}
+	if err := json.Unmarshal(respBody, &jsonResp); err != nil {
+		return nil, err
+	}
+
+	return &jsonResp, nil
 }
 
 func fileExists(path string) bool {
@@ -647,6 +694,6 @@ func main() {
 			log.Println(err)
 			continue
 		}
-		log.Printf("%s", respBody)
+		log.Println(respBody)
 	}
 }

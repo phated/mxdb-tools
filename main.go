@@ -79,10 +79,7 @@ func main() {
 		}
 
 		if currentCard.Preview.IsEqual(card) == false {
-			currentCard.Preview.Previewer = card.Previewer
-			currentCard.Preview.PreviewURL = card.PreviewURL
-			currentCard.Preview.IsActive = card.PreviewActive
-			resp, err := currentCard.Preview.Update()
+			resp, err := currentCard.Preview.Update(card)
 			if err != nil {
 				log.Println(err)
 			} else {

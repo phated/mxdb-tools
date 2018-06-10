@@ -11,13 +11,19 @@ type Preview struct {
 }
 
 // Update updates a Preview
-func (preview *Preview) Update() ([]byte, error) {
+func (preview *Preview) Update(card *csv.Card) ([]byte, error) {
+	updated := Preview{
+		Previewer:  card.Previewer,
+		PreviewURL: card.PreviewURL,
+		IsActive:   card.PreviewActive,
+	}
+
 	query, err := queries.MustBytes("UpdatePreview.graphql")
 	if err != nil {
 		return nil, err
 	}
 
-	return Request(query, preview)
+	return Request(query, updated)
 }
 
 // IsEqual checks if there are differences between the Preview and a csv.Card

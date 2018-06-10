@@ -1,0 +1,19 @@
+mutation CreateImage(
+  $cardId: ID!
+  $original: String!
+  $large: String!
+  $medium: String!
+  $small: String!
+  $thumbnail: String!
+) {
+  createImage(
+    cardId: $cardId
+    original: $original
+    large: $large
+    medium: $medium
+    small: $small
+    thumbnail: $thumbnail
+  ) {
+		id
+  }
+}

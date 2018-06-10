@@ -86,6 +86,21 @@ func main() {
 				log.Printf("Preivew updated: %s", resp)
 			}
 		}
+
+		if currentCard.Image.IsEqual(card) == false {
+			var resp []byte
+			var err error
+			if currentCard.Image.IsEmpty() {
+				resp, err = currentCard.CreateImage(card)
+			} else {
+				resp, err = currentCard.Image.Update(card)
+			}
+			if err != nil {
+				log.Println(err)
+			} else {
+				log.Printf("Image updated: %s", resp)
+			}
+		}
 	}
 
 	for _, card := range createCards {

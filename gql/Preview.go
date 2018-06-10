@@ -13,6 +13,7 @@ type Preview struct {
 // Update updates a Preview
 func (preview *Preview) Update(card *csv.Card) ([]byte, error) {
 	updated := Preview{
+		ID:         preview.ID,
 		Previewer:  card.Previewer,
 		PreviewURL: card.PreviewURL,
 		IsActive:   card.PreviewActive,

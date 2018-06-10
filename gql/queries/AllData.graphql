@@ -1,5 +1,6 @@
 query AllData {
   allCards(orderBy: uid_ASC) {
+    id
     uid
     rarity
     number

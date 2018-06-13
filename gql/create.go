@@ -5,8 +5,6 @@ import (
 	"mxdb-tools/csv"
 )
 
-// TODO: Non-Preview creation
-
 func CreateCard(card *csv.Card) ([]byte, error) {
 	if card.Type == "Character" {
 		return CreateCharacterCard(card)
@@ -24,7 +22,14 @@ func CreateCard(card *csv.Card) ([]byte, error) {
 }
 
 func CreateCharacterCard(card *csv.Card) ([]byte, error) {
-	query, err := queries.MustBytes("CreateCharacterCardWithPreview.graphql")
+	var queryFilename string
+	if card.HasPreview() {
+		queryFilename = "CreateCharacterCardWithPreview.graphql"
+	} else {
+		queryFilename = "CreateCharacterCard.graphql"
+	}
+
+	query, err := queries.MustBytes(queryFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +38,14 @@ func CreateCharacterCard(card *csv.Card) ([]byte, error) {
 }
 
 func CreateEventCard(card *csv.Card) ([]byte, error) {
-	query, err := queries.MustBytes("CreateEventCardWithPreview.graphql")
+	var queryFilename string
+	if card.HasPreview() {
+		queryFilename = "CreateEventCardWithPreview.graphql"
+	} else {
+		queryFilename = "CreateEventCard.graphql"
+	}
+
+	query, err := queries.MustBytes(queryFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +54,14 @@ func CreateEventCard(card *csv.Card) ([]byte, error) {
 }
 
 func CreateBattleCard(card *csv.Card) ([]byte, error) {
-	query, err := queries.MustBytes("CreateBattleCardWithPreview.graphql")
+	var queryFilename string
+	if card.HasPreview() {
+		queryFilename = "CreateBattleCardWithPreview.graphql"
+	} else {
+		queryFilename = "CreateBattleCard.graphql"
+	}
+
+	query, err := queries.MustBytes(queryFilename)
 	if err != nil {
 		return nil, err
 	}

@@ -29,3 +29,12 @@ type Card struct {
 func (card *Card) Filename() string {
 	return card.UID + ".jpg"
 }
+
+// HasPreview returns true if Preview fields exist
+func (card *Card) HasPreview() bool {
+	if card.PreviewURL == "" || card.Previewer == "" {
+		return false
+	}
+
+	return true
+}

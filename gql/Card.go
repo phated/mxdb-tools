@@ -1,7 +1,6 @@
 package gql
 
 import (
-	"log"
 	"mxdb-tools/csv"
 )
 
@@ -34,8 +33,6 @@ func (c *Card) CreateImage(card *csv.Card) ([]byte, error) {
 		Small:     card.SmallImageURL,
 		Thumbnail: card.ThumbnailImageURL,
 	}
-
-	log.Println(create)
 
 	query, err := queries.MustBytes("CreateImage.graphql")
 	if err != nil {

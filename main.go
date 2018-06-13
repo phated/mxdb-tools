@@ -83,7 +83,7 @@ func main() {
 			if err != nil {
 				log.Println(err)
 			} else {
-				log.Printf("Preivew updated: %s", resp)
+				log.Printf("Preview updated: %s", resp)
 			}
 		}
 
@@ -99,6 +99,15 @@ func main() {
 				log.Println(err)
 			} else {
 				log.Printf("Image updated: %s", resp)
+			}
+		}
+
+		if currentCard.IsEqual(card) == false {
+			resp, err := currentCard.Update(card)
+			if err != nil {
+				log.Println(err)
+			} else {
+				log.Printf("Card updated: %s", resp)
 			}
 		}
 	}

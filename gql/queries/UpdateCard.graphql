@@ -1,0 +1,26 @@
+mutation UpdateCard(
+  $id: ID!
+  $uid: String!
+  $rarity: CardRarity!
+  $number: Int!
+  $set: CardSet!
+  $title: String!
+  $subtitle: String
+  $type: CardType!
+  $mp: Int!
+) {
+  updateCard(
+    id: $id
+		uid: $uid
+		rarity: $rarity
+		number: $number
+		set: $set
+		title: $title
+		subtitle: $subtitle
+		type: $type
+		mp: $mp
+  ) {
+    id
+    title
+  }
+}

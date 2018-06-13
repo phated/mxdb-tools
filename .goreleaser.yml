@@ -1,0 +1,9 @@
+# Documentation at http://goreleaser.com
+builds:
+  - binary: metax-tools
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64

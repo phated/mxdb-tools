@@ -15,3 +15,10 @@
 
 // Generated directories for testing
 images/
+
+// GoReleaser archives
+dist/mxdb-tools*
+dist/config.yaml
+
+// Override the .exe ignore
+!dist/**/*.exe

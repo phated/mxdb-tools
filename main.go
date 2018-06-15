@@ -35,24 +35,7 @@ func main() {
 	}
 
 	for _, card := range cards {
-		if err := image.CreateOriginal(card); err != nil {
-			log.Println(err)
-			continue
-		}
-
-		if err := image.CreateLarge(card); err != nil {
-			log.Println(err)
-			continue
-		}
-		if err := image.CreateMedium(card); err != nil {
-			log.Println(err)
-			continue
-		}
-		if err := image.CreateSmall(card); err != nil {
-			log.Println(err)
-			continue
-		}
-		if err := image.CreateThumbnail(card); err != nil {
+		if err := image.CreateAll(card); err != nil {
 			log.Println(err)
 			continue
 		}
@@ -93,6 +76,16 @@ func main() {
 			if currentCard.Image.IsEmpty() {
 				resp, err = currentCard.CreateImage(card)
 			} else {
+				if card.OriginalImageURL != currentCard.Image.Original {
+					if err := image.RemoveAll(card); err != nil {
+						log.Println(err)
+						continue
+					}
+					if err := image.CreateAll(card); err != nil {
+						log.Println(err)
+						continue
+					}
+				}
 				resp, err = currentCard.Image.Update(card)
 			}
 			if err != nil {

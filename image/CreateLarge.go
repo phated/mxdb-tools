@@ -9,7 +9,6 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-// 1000px height It will probably do some "sips" stuff too
 func CreateLarge(card *csv.Card) error {
 	ogPath := filepath.Join(dirs.Original, card.Filename())
 	largePath := filepath.Join(dirs.Large, card.Filename())
@@ -29,6 +28,7 @@ func CreateLarge(card *csv.Card) error {
 	croppedImage := imaging.CropCenter(ogImg, width, height)
 	resizedImg := imaging.Resize(croppedImage, 0, 1000, imaging.Box)
 
+	// TODO: Final checklist images don't have PreviewActive == true
 	if dirs.Dropbox != "" && card.PreviewActive == true {
 		dropboxPath := filepath.Join(dirs.Dropbox, card.Filename())
 		if err := imaging.Save(resizedImg, dropboxPath); err != nil {

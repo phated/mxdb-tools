@@ -1,7 +1,6 @@
 package gql
 
 import (
-	"errors"
 	"mxdb-tools/csv"
 )
 
@@ -15,11 +14,8 @@ type Image struct {
 	Thumbnail string `json:"thumbnail"`
 }
 
-// Update updates or creates a Image
+// Update updates an Image
 func (image *Image) Update(card *csv.Card) ([]byte, error) {
-	// TODO: Add UpdateImage.graphql
-	return nil, errors.New("TODO: Add UpdateImage.graphql")
-
 	updated := Image{
 		ID:        image.ID,
 		Original:  card.OriginalImageURL,
